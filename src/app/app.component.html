@@ -71,56 +71,59 @@
 <!-- Grid container -->
 <ng-container *ngIf="isChecked">
   <div class="container" cdkDropListGroup>
-    <div class="grid-container" *ngFor="let user of users" cdkDropList
-      [cdkDropListEnterPredicate]="dropListEnterPredicate" (cdkDropListDropped)="dropListDropped($event)">
-      <mat-card class="card-grid-container" (cdkDragMoved)="dragMoved($event);" cdkDrag>
-        <mat-card-content>
-          <div class="img-title">
-            <img class="image-grid" [src]="user.avatar" alt="image">
-            <div class="name-title">
-              <div class="name">{{user.name}}</div>
-              <div class="user-name">{{user.username}}</div>
+    <ng-container *ngFor="let user of users;let i=index">
+      <div class="categories-item" cdkDropList cdkDropListOrientation="horizontal"
+        [cdkDropListData]="{user:user,index:i}" (cdkDropListDropped)="dropListDropped($event)">
+        <div class="example-custom-placeholder" *cdkDragPlaceholder></div>
+        <mat-card class="card-grid-container" cdkDrag>
+          <mat-card-content>
+            <div class="img-title">
+              <img class="image-grid" [src]="user.avatar" alt="image">
+              <div class="name-title">
+                <div class="name">{{user.name}}</div>
+                <div class="user-name">{{user.username}}</div>
+              </div>
             </div>
-          </div>
-          <div class="user-info">
-            <ul>
-              <li>
-                <div class="info">
-                  <mat-icon>cake</mat-icon>
-                  <div class="ml-3">
-                    {{ user.birthday | date: 'yyyy-MM-dd'}}
+            <div class="user-info">
+              <ul>
+                <li>
+                  <div class="info">
+                    <mat-icon>cake</mat-icon>
+                    <div class="ml-3">
+                      {{ user.birthday | date: 'yyyy-MM-dd'}}
+                    </div>
                   </div>
-                </div>
-              </li>
-              <li>
-                <div class="info">
-                  <mat-icon>email</mat-icon>
-                  <div class="ml-3">
-                    {{ user.email}}
+                </li>
+                <li>
+                  <div class="info">
+                    <mat-icon>email</mat-icon>
+                    <div class="ml-3">
+                      {{ user.email}}
+                    </div>
                   </div>
-                </div>
-              </li>
-              <li>
-                <div class="info">
-                  <mat-icon>location_on</mat-icon>
-                  <div class="ml-3">
-                    {{ user.location}}
+                </li>
+                <li>
+                  <div class="info">
+                    <mat-icon>location_on</mat-icon>
+                    <div class="ml-3">
+                      {{ user.location}}
+                    </div>
                   </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-          <div class="action-card">
-            <button mat-icon-button color="primary" (click)="openDialogUpdateUser(user)">
-              <mat-icon>create</mat-icon>
-            </button>
-            <button mat-icon-button color="accent" (click)="openDialogDeleteUser(user)">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </div>
+                </li>
+              </ul>
+            </div>
+            <div class="action-card">
+              <button mat-icon-button color="primary" (click)="openDialogUpdateUser(user)">
+                <mat-icon>create</mat-icon>
+              </button>
+              <button mat-icon-button color="accent" (click)="openDialogDeleteUser(user)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </ng-container>
   </div>
 </ng-container>
 

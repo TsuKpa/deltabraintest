@@ -1,5 +1,4 @@
-import { CdkDrag, CdkDragDrop, CdkDragMove, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
-import { ViewportRuler } from '@angular/cdk/scrolling';
+import { CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
 import { AfterViewInit, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -47,15 +46,13 @@ export class AppComponent implements OnInit, AfterViewInit {
   constructor(
     private usersService: UsersService,
     public dialogService: MatDialog,
-    private toastr: ToastrService,
-    private viewportRuler: ViewportRuler) { }
+    private toastr: ToastrService) { }
 
   ngOnInit(): void {
     if (!this.usersService.checkExist()) {
       this.usersService.saveToLocalStorage(this.usersService.data);
     }
     this.users = this.usersService.getUserDataFromLocalStorage();
-    console.log(this.users);
   }
 
   ngAfterViewInit(): void {
@@ -105,6 +102,9 @@ export class AppComponent implements OnInit, AfterViewInit {
     newData.avatar = newData.gender === Gender.FEMALE ? 'https://www.svgrepo.com/show/18074/avatar.svg' : 'https://www.svgrepo.com/show/53617/avatar.svg';
     this.users.unshift(newData);
     this.usersService.saveToLocalStorage(this.users);
+    if (!this.isChecked) {
+      this.table.renderRows();
+    }
     this.table.renderRows();
     this.toastr.success('Add user success!');
     this.dialogRef.close();
@@ -119,8 +119,8 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.toastr.error('Username is exist!');
       return;
     }
-    newData.isDisable = false;
-    newData.avatar = null;
+    newData.isDisable = oldData.isDisable;
+    newData.avatar = oldData.avatar;
     newData.birthday = moment(newData.birthday).toISOString();
     this.users = this.users.map(user => {
       if (user.username === newData.username) {
@@ -129,13 +129,14 @@ export class AppComponent implements OnInit, AfterViewInit {
       return user;
     });
     this.usersService.saveToLocalStorage(this.users);
-    this.table.renderRows();
+    if (!this.isChecked) {
+      this.table.renderRows();
+    }
     this.toastr.info('Update user success!');
     this.dialogRef.close();
   }
 
   openDialogUpdateUser(data: User): void {
-    console.log(data, this.users);
     this.dialogRef = this.dialogService.open(this.dialog, {
       data: {
         user: data,
@@ -153,90 +154,10 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
   }
 
-  dropListDropped(): void {
-    if (!this.target) {
-      return;
-    }
-
-    const phElement = this.placeholder.element.nativeElement;
-    const parent = phElement.parentElement;
-
-    // phElement.style.display = 'none';
-
-    parent.removeChild(phElement);
-    parent.appendChild(phElement);
-    parent.insertBefore(this.source.element.nativeElement, parent.children[this.sourceIndex]);
-
-    this.target = null;
-    this.source = null;
-
-    if (this.sourceIndex !== this.targetIndex) {
-      moveItemInArray(this.users, this.sourceIndex, this.targetIndex);
-    }
+  dropListDropped(event: CdkDragDrop<any>): void {
+    this.users[event.previousContainer.data.index] = event.container.data.user;
+    this.users[event.container.data.index] = event.previousContainer.data.user;
   }
-
-  dropListEnterPredicate = (drag: CdkDrag, drop: CdkDropList) => {
-
-    if (drop === this.placeholder) {
-      return true;
-    }
-
-    if (drop !== this.activeContainer) {
-      return false;
-    }
-
-    const phElement = this.placeholder.element.nativeElement;
-    const sourceElement = drag.dropContainer.element.nativeElement;
-    const dropElement = drop.element.nativeElement;
-
-    const dragIndex = __indexOf(dropElement.parentElement.children, (this.source ? phElement : sourceElement));
-    const dropIndex = __indexOf(dropElement.parentElement.children, dropElement);
-
-    if (!this.source) {
-      this.sourceIndex = dragIndex;
-      this.source = drag.dropContainer;
-
-      phElement.style.width = sourceElement.clientWidth + 'px';
-      phElement.style.height = sourceElement.clientHeight + 'px';
-
-      sourceElement.parentElement.removeChild(sourceElement);
-    }
-
-    this.targetIndex = dropIndex;
-    this.target = drop;
-
-    phElement.style.display = '';
-    dropElement.parentElement.insertBefore(phElement, (dropIndex > dragIndex
-      ? dropElement.nextSibling : dropElement));
-
-    // this.placeholder._dropListRef.enter(drag._dragRef, drag.element.nativeElement.offsetLeft, drag.element.nativeElement.offsetTop);
-    return false;
-  }
-
-  dragMoved(e: CdkDragMove): void {
-    const point = this.getPointerPositionOnPage(e.event);
-
-    this.listGroup._items.forEach(dropList => {
-      if (__isInsideDropListClientRect(dropList, point.x, point.y)) {
-        this.activeContainer = dropList;
-        return;
-      }
-    });
-  }
-
-  /** Determines the point of the page that was touched by the user. */
-  // tslint:disable-next-line: typedef
-  getPointerPositionOnPage(event: MouseEvent | TouchEvent) {
-    // `touches` will be empty for start/end events so we have to fall back to `changedTouches`.
-    const point = __isTouchEvent(event) ? (event.touches[0] || event.changedTouches[0]) : event;
-    const scrollPosition = this.viewportRuler.getViewportScrollPosition();
-
-    return {
-      x: point.pageX - scrollPosition.left,
-      y: point.pageY - scrollPosition.top
-    };
-  }
-
 
   openDialogDeleteUser(data: User): void {
     this.dialogRefDelete = this.dialogService.open(this.dialogDelete, {
@@ -253,14 +174,14 @@ export class AppComponent implements OnInit, AfterViewInit {
     });
     this.usersService.saveToLocalStorage(copyUsers);
     this.users = this.usersService.getUserDataFromLocalStorage();
-    this.table.renderRows();
+    if (!this.isChecked) {
+      this.table.renderRows();
+    }
     this.toastr.success('Delete user success!');
     this.dialogRefDelete.close();
   }
 
   getErrorMessage(field: keyof User): string {
-    // console.log(this.userForm.controls);
-
     const errorMessage = {
       email: {
         required: 'Your email is required',
@@ -298,20 +219,4 @@ export class AppComponent implements OnInit, AfterViewInit {
     }
     return errorMessage[field];
   }
-}
-
-
-// tslint:disable-next-line: typedef
-function __indexOf(collection, node) {
-  return Array.prototype.indexOf.call(collection, node);
-}
-
-/** Determines whether an event is a touch event. */
-function __isTouchEvent(event: MouseEvent | TouchEvent): event is TouchEvent {
-  return event.type.startsWith('touch');
-}
-
-function __isInsideDropListClientRect(dropList: CdkDropList, x: number, y: number): boolean {
-  const { top, bottom, left, right } = dropList.element.nativeElement.getBoundingClientRect();
-  return y >= top && y <= bottom && x >= left && x <= right;
 }

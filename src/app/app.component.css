@@ -133,8 +133,10 @@ mat-form-field {
   opacity: .3;
 }
 
-.grid-container {
-  display: inline-block;
+.container {
+  display: flex;
+  flex-wrap: wrap; /* NEW */
+  width: 100%;
 }
 
 
