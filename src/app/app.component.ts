@@ -1,5 +1,6 @@
-import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { CdkDrag, CdkDragDrop, CdkDragMove, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
+import { ViewportRuler } from '@angular/cdk/scrolling';
+import { AfterViewInit, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTable } from '@angular/material/table';
@@ -13,11 +14,21 @@ import { UsersService } from './services/users.service';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewInit {
   @ViewChild('dialogRef', { static: true }) dialog: TemplateRef<any>;
   @ViewChild('documentEditForm') documentEditForm: FormGroupDirective;
   @ViewChild('table') table: MatTable<User>;
   @ViewChild('dialogDelete', { static: true }) dialogDelete: TemplateRef<any>;
+  @ViewChild(CdkDropListGroup) listGroup: CdkDropListGroup<CdkDropList>;
+
+  @ViewChild(CdkDropList) placeholder: CdkDropList;
+
+  activeContainer;
+  target: CdkDropList = null;
+  targetIndex: number;
+  source: CdkDropList = null;
+  sourceIndex: number;
+  dragIndex: number;
 
   dialogRef: MatDialogRef<any, any>;
   dialogRefDelete: MatDialogRef<any, any>;
@@ -33,11 +44,11 @@ export class AppComponent implements OnInit {
   userForm = this.getNewFormGroup();
 
   displayedColumns: string[] = ['avatar', 'username', 'name', 'email', 'birthday', 'action'];
-
   constructor(
     private usersService: UsersService,
     public dialogService: MatDialog,
-    private toastr: ToastrService) { }
+    private toastr: ToastrService,
+    private viewportRuler: ViewportRuler) { }
 
   ngOnInit(): void {
     if (!this.usersService.checkExist()) {
@@ -45,6 +56,12 @@ export class AppComponent implements OnInit {
     }
     this.users = this.usersService.getUserDataFromLocalStorage();
     console.log(this.users);
+  }
+
+  ngAfterViewInit(): void {
+    const phElement = this.placeholder.element.nativeElement;
+    phElement.style.display = 'none';
+    phElement.parentElement.removeChild(phElement);
   }
 
   getNewFormGroup(): FormGroup {
@@ -125,7 +142,7 @@ export class AppComponent implements OnInit {
         type: 'update'
       }
     });
-    const dataCopy = {...data};
+    const dataCopy = { ...data };
     delete dataCopy.isDisable;
     delete dataCopy.avatar;
     this.dialogRef.afterOpened().subscribe(() => {
@@ -135,6 +152,91 @@ export class AppComponent implements OnInit {
       this.userForm = this.getNewFormGroup();
     });
   }
+
+  dropListDropped(): void {
+    if (!this.target) {
+      return;
+    }
+
+    const phElement = this.placeholder.element.nativeElement;
+    const parent = phElement.parentElement;
+
+    // phElement.style.display = 'none';
+
+    parent.removeChild(phElement);
+    parent.appendChild(phElement);
+    parent.insertBefore(this.source.element.nativeElement, parent.children[this.sourceIndex]);
+
+    this.target = null;
+    this.source = null;
+
+    if (this.sourceIndex !== this.targetIndex) {
+      moveItemInArray(this.users, this.sourceIndex, this.targetIndex);
+    }
+  }
+
+  dropListEnterPredicate = (drag: CdkDrag, drop: CdkDropList) => {
+
+    if (drop === this.placeholder) {
+      return true;
+    }
+
+    if (drop !== this.activeContainer) {
+      return false;
+    }
+
+    const phElement = this.placeholder.element.nativeElement;
+    const sourceElement = drag.dropContainer.element.nativeElement;
+    const dropElement = drop.element.nativeElement;
+
+    const dragIndex = __indexOf(dropElement.parentElement.children, (this.source ? phElement : sourceElement));
+    const dropIndex = __indexOf(dropElement.parentElement.children, dropElement);
+
+    if (!this.source) {
+      this.sourceIndex = dragIndex;
+      this.source = drag.dropContainer;
+
+      phElement.style.width = sourceElement.clientWidth + 'px';
+      phElement.style.height = sourceElement.clientHeight + 'px';
+
+      sourceElement.parentElement.removeChild(sourceElement);
+    }
+
+    this.targetIndex = dropIndex;
+    this.target = drop;
+
+    phElement.style.display = '';
+    dropElement.parentElement.insertBefore(phElement, (dropIndex > dragIndex
+      ? dropElement.nextSibling : dropElement));
+
+    // this.placeholder._dropListRef.enter(drag._dragRef, drag.element.nativeElement.offsetLeft, drag.element.nativeElement.offsetTop);
+    return false;
+  }
+
+  dragMoved(e: CdkDragMove): void {
+    const point = this.getPointerPositionOnPage(e.event);
+
+    this.listGroup._items.forEach(dropList => {
+      if (__isInsideDropListClientRect(dropList, point.x, point.y)) {
+        this.activeContainer = dropList;
+        return;
+      }
+    });
+  }
+
+  /** Determines the point of the page that was touched by the user. */
+  // tslint:disable-next-line: typedef
+  getPointerPositionOnPage(event: MouseEvent | TouchEvent) {
+    // `touches` will be empty for start/end events so we have to fall back to `changedTouches`.
+    const point = __isTouchEvent(event) ? (event.touches[0] || event.changedTouches[0]) : event;
+    const scrollPosition = this.viewportRuler.getViewportScrollPosition();
+
+    return {
+      x: point.pageX - scrollPosition.left,
+      y: point.pageY - scrollPosition.top
+    };
+  }
+
 
   openDialogDeleteUser(data: User): void {
     this.dialogRefDelete = this.dialogService.open(this.dialogDelete, {
@@ -196,4 +298,20 @@ export class AppComponent implements OnInit {
     }
     return errorMessage[field];
   }
+}
+
+
+// tslint:disable-next-line: typedef
+function __indexOf(collection, node) {
+  return Array.prototype.indexOf.call(collection, node);
+}
+
+/** Determines whether an event is a touch event. */
+function __isTouchEvent(event: MouseEvent | TouchEvent): event is TouchEvent {
+  return event.type.startsWith('touch');
+}
+
+function __isInsideDropListClientRect(dropList: CdkDropList, x: number, y: number): boolean {
+  const { top, bottom, left, right } = dropList.element.nativeElement.getBoundingClientRect();
+  return y >= top && y <= bottom && x >= left && x <= right;
 }
