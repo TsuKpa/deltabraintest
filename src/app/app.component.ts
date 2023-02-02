@@ -5,7 +5,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTable } from '@angular/material/table';
 import * as moment from 'moment';
 import { ToastrService } from 'ngx-toastr';
-import { Gender, User } from './models/user.model';
+import { Gender, ImageURL, User } from './models/user.model';
 import { UsersService } from './services/users.service';
 
 @Component({
@@ -99,13 +99,12 @@ export class AppComponent implements OnInit, AfterViewInit {
     newData.isDisable = false;
     newData.avatar = null;
     newData.birthday = moment(newData.birthday).toISOString();
-    newData.avatar = newData.gender === Gender.FEMALE ? 'https://www.svgrepo.com/show/18074/avatar.svg' : 'https://www.svgrepo.com/show/53617/avatar.svg';
+    newData.avatar = newData.gender === Gender.FEMALE ? ImageURL.female : ImageURL.male;
     this.users.unshift(newData);
     this.usersService.saveToLocalStorage(this.users);
     if (!this.isChecked) {
       this.table.renderRows();
     }
-    this.table.renderRows();
     this.toastr.success('Add user success!');
     this.dialogRef.close();
   }
@@ -122,6 +121,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     newData.isDisable = oldData.isDisable;
     newData.avatar = oldData.avatar;
     newData.birthday = moment(newData.birthday).toISOString();
+    newData.avatar = newData.gender === Gender.FEMALE ? ImageURL.female : ImageURL.male;
     this.users = this.users.map(user => {
       if (user.username === newData.username) {
         user = newData;
