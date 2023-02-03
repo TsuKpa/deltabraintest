@@ -1,5 +1,5 @@
 import { CdkDragDrop, CdkDropList, CdkDropListGroup, moveItemInArray } from '@angular/cdk/drag-drop';
-import { AfterViewInit, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, FormGroupDirective, Validators } from '@angular/forms';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatTable } from '@angular/material/table';
@@ -33,7 +33,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   dialogRefDelete: MatDialogRef<any, any>;
 
   users: User[] = [];
-  isChecked = true;
+  isChecked = false;
   value: any;
   birthdayRange = {
     min: new Date('1950-1-1'),
@@ -41,8 +41,8 @@ export class AppComponent implements OnInit, AfterViewInit {
   };
 
   userForm = this.getNewFormGroup();
-
   displayedColumns: string[] = ['avatar', 'username', 'name', 'email', 'birthday', 'action'];
+
   constructor(
     private usersService: UsersService,
     public dialogService: MatDialog,
@@ -53,6 +53,10 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.usersService.saveToLocalStorage(this.usersService.data);
     }
     this.users = this.usersService.getUserDataFromLocalStorage();
+    this.isChecked = !this.isChecked;
+    setTimeout(() => {
+    this.isChecked = !this.isChecked;
+    }, 1);
   }
 
   ngAfterViewInit(): void {
@@ -63,8 +67,8 @@ export class AppComponent implements OnInit, AfterViewInit {
 
   getNewFormGroup(): FormGroup {
     return new FormGroup({
-      username: new FormControl('', [Validators.required, Validators.maxLength(8), Validators.pattern('[a-z0-9 ]*')]),
-      name: new FormControl('', [Validators.required, Validators.maxLength(20)]),
+      username: new FormControl('', [Validators.required, Validators.maxLength(8), Validators.pattern('[a-z][a-z0-9_.]+')]),
+      name: new FormControl('', [Validators.maxLength(20)]),
       email: new FormControl('', [Validators.required, Validators.pattern(`\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*(\\.\\w{2,3})+`)]),
       gender: new FormControl(Gender.MALE, Validators.required),
       location: new FormControl('', [Validators.required, Validators.maxLength(200)]),
@@ -93,7 +97,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.userForm.controls.username.setErrors({
         usernameExist: true
       });
-      this.toastr.error('Username is exist!');
+      this.toastr.error('Tên tài khoản đã tồn tại!');
       return;
     }
     newData.isDisable = false;
@@ -105,7 +109,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (!this.isChecked) {
       this.table.renderRows();
     }
-    this.toastr.success('Add user success!');
+    this.toastr.success('Thêm người dùng thành công!');
     this.dialogRef.close();
   }
 
@@ -115,7 +119,7 @@ export class AppComponent implements OnInit, AfterViewInit {
       this.userForm.controls.username.setErrors({
         usernameExist: true
       });
-      this.toastr.error('Username is exist!');
+      this.toastr.error('Tên tài khoản đã tồn tại!');
       return;
     }
     newData.isDisable = oldData.isDisable;
@@ -132,7 +136,7 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (!this.isChecked) {
       this.table.renderRows();
     }
-    this.toastr.info('Update user success!');
+    this.toastr.info('Cập nhật người dùng thành công!');
     this.dialogRef.close();
   }
 
@@ -177,29 +181,33 @@ export class AppComponent implements OnInit, AfterViewInit {
     if (!this.isChecked) {
       this.table.renderRows();
     }
-    this.toastr.success('Delete user success!');
+    this.toastr.success('Xóa người dùng thành công!');
     this.dialogRefDelete.close();
   }
 
   getErrorMessage(field: keyof User): string {
     const errorMessage = {
       email: {
-        required: 'Your email is required',
-        wrongPattern: 'Your email is invalid'
+        required: 'Email là bắt buộc',
+        wrongPattern: 'Vui lòng nhập đúng định dạng email'
       },
-      name: 'Your name is required',
+      name: 'Tên không đúng',
       username: {
-        required: 'Your username is required',
-        usernameExist: 'Your username is exist'
+        required: 'Tên tài khoản là bắt buộc',
+        usernameExist: 'Tài khoản đã tồn tại',
+        wrongPattern: 'Tên tài khoản chỉ có a-z, 0-9, không bắt đầu bằng chữ số'
       },
-      location: 'Your location is required',
+      location: 'Địa chỉ là bắt buộc',
       birthday: {
-        required: 'Your birthday is required',
-        wrongPattern: 'Your birthday is invalid'
+        required: 'Ngày sinh là bắt buộc',
+        wrongPattern: 'Ngày sinh không đúng'
       },
-      gender: 'Your gender is required'
+      gender: 'Giới tính là bắt buộc'
     };
     if (field === 'username') {
+      if (this.userForm.controls.username.hasError('pattern')) {
+        return errorMessage.username.wrongPattern;
+      }
       if (this.userForm.controls.username.hasError('required')) {
         return errorMessage.username.required;
       }

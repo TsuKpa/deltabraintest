@@ -6,41 +6,40 @@
     <div class="search-container">
       <button mat-raised-button color="accent" class="ml-3" (click)="openDialog()">
         <mat-icon>add</mat-icon>
-        Add
+        Thêm
       </button>
-      <mat-slide-toggle class="ml-3" color="primary" disabled="false" [(ngModel)]="isChecked">
-        View grid
+      <mat-slide-toggle class="ml-3" color="primary" [(ngModel)]="isChecked">
+        Xem dạng lưới
       </mat-slide-toggle>
     </div>
   </mat-card-content>
 </mat-card>
 
 <!-- table container -->
-<ng-container *ngIf="!isChecked">
-  <mat-card class="card-container" [hidden]="isChecked">
+<div *ngIf="!isChecked">
+  <mat-card class="card-container">
     <mat-card-content>
-      <table #table mat-table [dataSource]="users" class="mat-elevation-z8" cdkDropList [cdkDropListData]="users"
-        (cdkDropListDropped)="drop($event)">
+      <table #table mat-table [dataSource]="users" cdkDropList [cdkDropListData]="users" (cdkDropListDropped)="drop($event)">
 
         <ng-container matColumnDef="avatar">
-          <th mat-header-cell *matHeaderCellDef> Avatar </th>
+          <th mat-header-cell *matHeaderCellDef> Ảnh đại diện </th>
           <td mat-cell *matCellDef="let element">
             <img class="image-list" [src]="element.avatar" alt="image">
           </td>
         </ng-container>
 
         <ng-container matColumnDef="username">
-          <th mat-header-cell *matHeaderCellDef> Username </th>
+          <th mat-header-cell *matHeaderCellDef> Tên tài khoản </th>
           <td mat-cell *matCellDef="let element"> {{element.username}} </td>
         </ng-container>
 
         <ng-container matColumnDef="name">
-          <th mat-header-cell *matHeaderCellDef> Name </th>
+          <th mat-header-cell *matHeaderCellDef> Tên </th>
           <td mat-cell *matCellDef="let element"> {{element.name}} </td>
         </ng-container>
 
         <ng-container matColumnDef="birthday">
-          <th mat-header-cell *matHeaderCellDef> Birthday </th>
+          <th mat-header-cell *matHeaderCellDef> Ngày sinh </th>
           <td mat-cell *matCellDef="let element"> {{element.birthday | date:'yyyy-MM-dd'}} </td>
         </ng-container>
 
@@ -50,7 +49,7 @@
         </ng-container>
 
         <ng-container matColumnDef="action">
-          <th mat-header-cell *matHeaderCellDef> Action </th>
+          <th mat-header-cell *matHeaderCellDef> Hành động </th>
           <td mat-cell *matCellDef="let element">
             <button mat-icon-button color="primary" (click)="openDialogUpdateUser(element)">
               <mat-icon>create</mat-icon>
@@ -66,7 +65,7 @@
       </table>
     </mat-card-content>
   </mat-card>
-</ng-container>
+</div>
 
 <!-- Grid container -->
 <ng-container *ngIf="isChecked">
@@ -133,26 +132,26 @@
 <ng-template #dialogRef let-data>
   <mat-card class="dialog">
     <mat-card-header class="header-dialog">
-      <h3>{{data.type === 'update' ? 'Update user' : 'Add user'}}</h3>
+      <h3>{{data.type === 'update' ? 'Cập nhật người dùng' : 'Thêm người dùng'}}</h3>
     </mat-card-header>
     <mat-divider class="divider"></mat-divider>
     <mat-card-content>
 
       <form [formGroup]="userForm">
         <mat-form-field appearance="fill">
-          <mat-label>Username</mat-label>
-          <input matInput placeholder="Please enter your username" required formControlName="username" maxlength="8">
+          <mat-label>Tên tài khoản</mat-label>
+          <input matInput placeholder="Tên tài khoản chỉ chứa a-z, 0-9 và không có kí tự đặc biệt" required formControlName="username" maxlength="8">
           <mat-error *ngIf="userForm.controls.username.invalid">{{getErrorMessage('username')}}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="fill">
-          <mat-label>Name</mat-label>
-          <input matInput placeholder="Please enter your name" required formControlName="name" maxlength="20">
+          <mat-label>Tên</mat-label>
+          <input matInput placeholder="Nhập tên của bạn" formControlName="name" maxlength="20">
           <mat-error *ngIf="userForm.controls.name.invalid">{{getErrorMessage('name')}}</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="fill">
-          <mat-label>Birthday</mat-label>
+          <mat-label>Ngày sinh</mat-label>
           <input matInput [matDatepicker]="picker" placeholder="YYYY/MM/DD" required formControlName="birthday"
             [max]="birthdayRange.max" [min]="birthdayRange.min">
           <mat-error *ngIf="userForm.controls.birthday.invalid">{{getErrorMessage('birthday')}}</mat-error>
@@ -161,22 +160,22 @@
         </mat-form-field>
 
         <mat-form-field appearance="fill">
-          <mat-label>Location</mat-label>
-          <input matInput placeholder="Please enter your location" required formControlName="location" maxlength="200">
+          <mat-label>Địa chỉ</mat-label>
+          <input matInput placeholder="Nhập địa chỉ của bạn" required formControlName="location" maxlength="200">
           <mat-error *ngIf="userForm.controls.location.invalid">{{getErrorMessage('location')}}</mat-error>
         </mat-form-field>
 
         <mat-form-field>
           <mat-label>Email</mat-label>
-          <input matInput placeholder="abc@example.com" required formControlName="email">
+          <input matInput placeholder="abc@example.com" required formControlName="email" maxlength="30">
           <mat-error *ngIf="userForm.controls.email.invalid">{{getErrorMessage('email')}}</mat-error>
         </mat-form-field>
 
         <div>
-          <mat-label>Gender</mat-label>
+          <mat-label>Giới tính</mat-label>
           <mat-radio-group>
-            <mat-radio-button value="MALE" formControlName="gender" color="primary" checked>MALE</mat-radio-button>
-            <mat-radio-button value="FEMALE" formControlName="gender" color="primary">FEMALE</mat-radio-button>
+            <mat-radio-button value="MALE" formControlName="gender" color="primary" checked>Nam</mat-radio-button>
+            <mat-radio-button value="FEMALE" formControlName="gender" color="primary">Nữ</mat-radio-button>
           </mat-radio-group>
         </div>
       </form>
@@ -186,10 +185,10 @@
     <mat-card-action class="footer-dialog">
       <button mat-raised-button color="accent" (click)="data.type === 'update' ? updateUser(data.user) : addUser()"
         [disabled]="userForm.invalid">
-        {{data.type === 'update' ? 'Update' : 'Add'}}
+        {{data.type === 'update' ? 'Cập nhật' : 'Thêm'}}
       </button>
       <button mat-raised-button color="secondary" class="ml-3" mat-dialog-close>
-        Cancel
+        Hủy
       </button>
     </mat-card-action>
   </mat-card>
@@ -203,19 +202,19 @@
 <ng-template #dialogDelete let-data>
   <mat-card class="dialog-delete">
     <mat-card-header class="header-dialog">
-      <h3>Confirm delete user</h3>
+      <h3>Xác nhận xóa người dùng</h3>
     </mat-card-header>
     <mat-card-content>
       <div class="title-delete">
-        Delete user <i>{{data.username}}</i>?
+        Xóa người dùng <i>{{data.username}}</i>?
       </div>
     </mat-card-content>
     <mat-card-action class="footer-dialog">
       <button mat-raised-button color="accent" (click)="deleteUser(data.username)">
-        Delete
+        Xóa
       </button>
       <button mat-raised-button color="secondary" class="ml-3" mat-dialog-close>
-        Cancel
+        Hủy
       </button>
     </mat-card-action>
   </mat-card>
